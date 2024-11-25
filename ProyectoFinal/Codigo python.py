@@ -1,4 +1,4 @@
-mport mysql.connector
+import mysql.connector
 
 # Conexión a la base de datos MySQL
 def connect_to_database():

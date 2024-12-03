@@ -48,25 +48,36 @@ def gestionar_productos(connection):
         print("Producto agregado exitosamente!")
 
     elif opcion == '2':
+        cursor.callproc("obtener_productos")
+        for producto in cursor.stored_results():
+            productos = producto.fetchall()
+            for producto in productos:
+                print(f"ID: {producto[0]}, Nombre: {producto[1]}, Precio: {producto[3]}, Stock: {producto[4]}")
         product_id = int(input("ID del producto a actualizar: "))
         nuevo_precio = float(input("Nuevo precio: "))
         nueva_cantidad = int(input("Nuevo stock: "))
-        cursor.execute("UPDATE Producto SET precio = %s, stock = %s WHERE id_producto = %s", (nuevo_precio, nueva_cantidad, product_id))
+        cursor.callproc("actualizar_producto", (product_id, nuevo_precio, nueva_cantidad))  # Llamamos al procedimiento
         connection.commit()
         print("Producto actualizado exitosamente!")
 
     elif opcion == '3':
-        cursor.execute("SELECT * FROM Producto")
-        productos = cursor.fetchall()
-        for producto in productos:
-            print(f"ID: {producto[0]}, Nombre: {producto[1]}, Precio: {producto[3]}, Stock: {producto[4]}")
+        cursor.callproc("obtener_productos")
+        for producto in cursor.stored_results():
+            productos = producto.fetchall()
+            for producto in productos:
+                print(f"ID: {producto[0]}, Nombre: {producto[1]}, Precio: {producto[3]}, Stock: {producto[4]}")
     
     elif opcion == '4':
+        cursor.callproc("obtener_productos")
+        for producto in cursor.stored_results():
+            productos = producto.fetchall()
+            for producto in productos:
+                print(f"ID: {producto[0]}, Nombre: {producto[1]}")
         product_id = int(input("ID del producto a eliminar: "))
-        cursor.execute("DELETE FROM Producto WHERE id_producto = %s", (product_id,))
+        cursor.callproc("eliminar_producto", (product_id,))  # Llamamos al procedimiento
         connection.commit()
         print("Producto eliminado exitosamente!")
-    
+   
 def gestionar_clientes(connection):
     cursor = connection.cursor()
     print("\nGestión de Clientes")
@@ -87,6 +98,10 @@ def gestionar_clientes(connection):
         print("Cliente registrado exitosamente!")
 
     elif opcion == '2':
+        cursor.execute("SELECT * FROM Cliente")
+        clientes = cursor.fetchall()
+        for cliente in clientes:
+            print(f"ID: {cliente[0]}, Nombre: {cliente[1]}, Email: {cliente[2]}, Teléfono: {cliente[3]}, Dirección: {cliente[4]}")
         cliente_id = int(input("ID del cliente a actualizar: "))
         nuevo_telefono = input("Nuevo teléfono: ")
         nueva_direccion = input("Nueva dirección: ")
@@ -126,14 +141,26 @@ def reporte_productos_mas_vendidos(connection):
     producto = cursor.fetchone()
     print(f"\nProducto más vendido: {producto[0]}, Cantidad vendida: {producto[1]}")
 
+# Modificar valor de productos (actualizar el stock de todos)
 def modificar_valor_producto(connection):
     cursor = connection.cursor()
-    producto_id = int(input("ID del producto a modificar: "))
-    cantidad_maxima = int(input("Cantidad máxima que se puede vender: "))
+    cantidad_maxima = int(input("Cantidad máxima que se puede vender para todos los productos: "))
     
-    cursor.execute("UPDATE Producto SET stock = %s WHERE id_producto = %s", (cantidad_maxima, producto_id))
+    cursor.execute("UPDATE Producto SET stock = %s", (cantidad_maxima,))
     connection.commit()
-    print(f"Stock del producto con ID {producto_id} actualizado exitosamente.")
+    print(f"Stock de todos los productos actualizado a {cantidad_maxima} exitosamente.")
+
+# Función para realizar búsqueda avanzada
+def busqueda_avanzada(connection):
+    cursor = connection.cursor()
+    nombre_producto = input("Ingrese el nombre del producto a buscar: ")
+    cursor.execute("SELECT * FROM Producto WHERE nombre LIKE %s", ('%' + nombre_producto + '%',))
+    productos = cursor.fetchall()
+    if productos:
+        for producto in productos:
+            print(f"ID: {producto[0]}, Nombre: {producto[1]}, Precio: {producto[3]}, Stock: {producto[4]}")
+    else:
+        print("No se encontraron productos con ese nombre.")
 
 def main():
     connection = connect_to_database()
@@ -151,7 +178,7 @@ def main():
         elif option == '3':
             procesar_ordenes(connection)
         elif option == '4':
-            reporte_productos_mas_vendidos(connection)
+            busqueda_avanzada(connection)  # Llamamos a la búsqueda avanzada
         elif option == '5':
             reporte_productos_mas_vendidos(connection)
         elif option == '6':
@@ -166,4 +193,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
